@@ -65,7 +65,7 @@ nav.tabs button.on{color:var(--main);font-weight:700}
 <script src="bank/maternal.js"></script>
 <script>
 "use strict";
-var APP_VER = "1.1.0";
+var APP_VER = "1.1.1";
 var SUBJECTS = ["해부생리","기초약리","기초영양","기본간호","모성간호","지역사회"];
 var BANK = (window.QBANK || []).slice();
 var BY_ID = {}; BANK.forEach(function(q){ BY_ID[q.id] = q; });
@@ -230,7 +230,7 @@ function vMore(){
   $app.innerHTML='<div class="card"><b>구글 드라이브 연동</b><div class="muted">로그인하면 내 구글 드라이브 「간호조무사_문제풀이」 폴더에 기록이 저장되고, 폰·아이패드 기록이 하나로 합쳐져요.</div><div class="sync" id="gdstat"></div>'+
     '<button class="btn" id="gdgo">'+(gdValid()?'지금 맞추기':'구글 로그인')+'</button>'+(gd.linked?'<button class="btn sub" id="gdoff">이 기기 연결 해제</button>':'')+'</div>'+
     '<div class="card"><b>신고 보내기</b><div class="muted">「이상 있음」으로 남긴 문항 '+nf+'개. 눌러서 카톡 등으로 보내 주세요.</div><button class="btn" id="fsend"'+(nf?'':' disabled')+'>신고 보내기</button></div>'+
-    '<div class="card"><b>기록 백업</b><div class="muted">풀이 기록은 이 휴대폰 안에만 있어요. 기기를 바꾸거나 브라우저 데이터를 지우기 전에 백업하세요.</div>'+
+    '<div class="card"><b>기록 백업</b><div class="muted">구글 로그인을 하면 드라이브에 자동 저장·백업돼요. 로그인하지 않았다면 기록은 이 기기 안에만 있으니, 기기를 바꾸기 전에 파일로 저장해 두세요.</div>'+
     '<button class="btn sub" id="exp">기록 파일로 저장</button><button class="btn sub" id="imp">기록 파일 불러오기</button><input type="file" id="impf" accept=".json,application/json" class="hide"></div>'+
     '<div class="card muted">문항 '+BANK.length+'개 · 앱 '+APP_VER+'<br>문항은 교재를 바탕으로 직접 만든 연습용이에요. 숫자는 교재 쪽수로 확인하세요.</div>';
   gdUI();
