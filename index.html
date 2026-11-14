@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>간호조무사 문제풀이</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6f6a">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="문제풀이">
+<style>
+:root{--bg:#f6f7f5;--card:#fff;--ink:#1f2a2a;--sub:#5d6b6a;--line:#dfe5e3;--main:#2f6f6a;--ok:#1e8a4c;--ng:#c2372f;--warn:#b7791f;--sel:#e8f2f1}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Apple SD Gothic Neo",sans-serif;font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%}
+body{padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:5;background:var(--main);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:8px;padding:5px 10px;font-size:15px}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:17px;font-weight:600;background:var(--main);color:#fff;margin-top:8px;font-family:inherit}
+.btn.sub{background:#fff;color:var(--main);border:1.5px solid var(--main)}
+.btn:disabled{opacity:.4}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;font-size:15px;font-family:inherit;color:var(--ink)}
+.chip.on{border-color:var(--main);background:var(--sel);color:var(--main);font-weight:700}
+.muted{color:var(--sub);font-size:14px}
+.big{font-size:30px;font-weight:800}
+.q-meta{display:flex;justify-content:space-between;color:var(--sub);font-size:14px;margin-bottom:6px}
+.scene{background:#f1f5f4;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.items{margin:8px 0 10px;padding-left:4px}
+.ask{font-weight:700;margin-bottom:10px}
+.opt{display:flex;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;font-size:16px;font-family:inherit;color:var(--ink);line-height:1.45}
+.opt .n{flex:0 0 24px;height:24px;border-radius:50%;border:1.5px solid var(--sub);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub)}
+.opt.ok{border-color:var(--ok);background:#eaf6ef}.opt.ok .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.ng{border-color:var(--ng);background:#fbecea}.opt.ng .n{background:var(--ng);border-color:var(--ng);color:#fff}
+.ex{white-space:pre-wrap;background:#fbfaf3;border:1px solid #ece6c8;border-radius:10px;padding:12px;font-size:15px}
+.res-ok{color:var(--ok);font-weight:800}.res-ng{color:var(--ng);font-weight:800}
+.timer{font-variant-numeric:tabular-nums}.timer.over{color:var(--ng);font-weight:700}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--main)}
+table.st{width:100%;border-collapse:collapse;font-size:15px}table.st td{padding:6px 2px;border-bottom:1px solid var(--line)}table.st td:last-child{text-align:right}
+textarea{width:100%;min-height:70px;font-size:16px;font-family:inherit;border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.tag{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:4px;color:var(--sub)}
+.flagbtn{background:none;border:0;color:var(--warn);font-size:14px;text-decoration:underline;padding:6px 0;font-family:inherit}
+nav.tabs{position:sticky;bottom:0;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:14px;color:var(--sub);font-family:inherit}
+nav.tabs button.on{color:var(--main);font-weight:700}
+.hide{display:none}
+</style>
+</head>
+<body>
+<header><h1 id="ttl">간호조무사 문제풀이</h1><button id="quit" class="hide">그만</button></header>
+<main id="app"></main>
+<nav class="tabs" id="tabs">
+  <button data-v="home" class="on">문제풀기</button>
+  <button data-v="wrong">오답노트</button>
+  <button data-v="stats">기록</button>
+  <button data-v="more">설정</button>
+</nav>
+<!-- 문항은행: 과목별 파일. 새 과목은 여기 한 줄 추가 -->
+<script src="bank/maternal.js"></script>
+<script>
+"use strict";
+var APP_VER = "1.0.0";
+var SUBJECTS = ["해부생리","기초약리","기초영양","기본간호","모성간호","지역사회"];
+var BANK = (window.QBANK || []).slice();
+var BY_ID = {}; BANK.forEach(function(q){ BY_ID[q.id] = q; });
+var KEY = "nq_v1";      // 기록은 이 기기 브라우저 저장소에만 둔다(저장소·서버로 보내지 않음)
+var SEC_PER_Q = 60;     // 국시: 105문항 105분
+
+/* ---------- 저장 ---------- */
+function blank(){ return {first:{}, last:{}, wrong:{}, flags:{}, log:[]}; }
+function load(){
+  try{ var s = JSON.parse(localStorage.getItem(KEY) || "null"); if(!s) return blank();
+       var b = blank(); for(var k in b){ if(!(k in s)) s[k] = b[k]; } return s; }
+  catch(e){ return blank(); }
+}
+var S = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("저장 실패: 저장 공간을 확인하세요"); } }
+
+/* 답 하나를 기록. first = 처음 본 문항의 첫 답(실력 지표), 이후는 복습 */
+function record(q, ok, sec){
+  var now = Date.now(), isFirst = !S.first[q.id];
+  if(isFirst) S.first[q.id] = {ok:ok, ts:now, sec:sec, ver:q.ver};
+  S.last[q.id] = {ok:ok, ts:now};
+  S.log.push({id:q.id, ok:ok?1:0, f:isFirst?1:0, ts:now, sec:sec});
+  if(S.log.length > 5000) S.log = S.log.slice(-5000);
+  var w = S.wrong[q.id];
+  if(!ok){ S.wrong[q.id] = {st:"틀리는 중", miss:((w&&w.miss)||0)+1, streak:0, ts:now}; }
+  else if(w){ var st = w.streak + 1; w.streak = st; w.ts = now; w.st = st >= 3 ? "안정" : "학습 중"; }
+  save();
+  return isFirst;
+}
+
+/* ---------- 유틸 ---------- */
+var $app = document.getElementById("app");
+function h(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function shuffle(a){ a = a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function pct(n,d){ return d ? Math.round(n*100/d) + "%" : "–"; }
+function toast(m){ var t=document.createElement("div"); t.textContent=m; t.style.cssText="position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;z-index:9;font-size:15px"; document.body.appendChild(t); setTimeout(function(){t.remove();},2200); }
+function subjOf(s){ return BANK.filter(function(q){ return s==="전체" || q.subject===s; }); }
+var CIRC = ["①","②","③","④","⑤"];
+
+/* ---------- 화면: 홈 ---------- */
+var pick = {subj:"전체", mode:"new", n:10, timer:true};
+function vHome(){
+  var subs = ["전체"].concat(SUBJECTS.filter(function(s){ return BANK.some(function(q){return q.subject===s;}); }));
+  var pool = subjOf(pick.subj);
+  var nNew = pool.filter(function(q){ return !S.first[q.id]; }).length;
+  var nWrong = pool.filter(function(q){ var w=S.wrong[q.id]; return w && w.st!=="안정"; }).length;
+  var html = '<div class="card"><div class="muted">과목</div><div class="row" style="margin-top:6px">' +
+    subs.map(function(s){ return '<button class="chip'+(pick.subj===s?' on':'')+'" data-subj="'+h(s)+'">'+h(s)+'</button>'; }).join("") + '</div>' +
+    '<div class="muted" style="margin-top:12px">무엇을 풀까요</div><div class="row" style="margin-top:6px">' +
+    [["new","처음 보는 문항 ("+nNew+")"],["wrong","틀린 문항 ("+nWrong+")"],["all","전체 섞기 ("+pool.length+")"]].map(function(m){
+      return '<button class="chip'+(pick.mode===m[0]?' on':'')+'" data-mode="'+m[0]+'">'+m[1]+'</button>'; }).join("") + '</div>' +
+    '<div class="muted" style="margin-top:12px">문항 수</div><div class="row" style="margin-top:6px">' +
+    [10,20,30].map(function(n){ return '<button class="chip'+(pick.n===n?' on':'')+'" data-n="'+n+'">'+n+'</button>'; }).join("") + '</div>' +
+    '<label class="row" style="margin-top:12px;align-items:center"><input type="checkbox" id="tm"'+(pick.timer?' checked':'')+'> <span>시간 재기 (국시처럼 1문항 1분)</span></label>' +
+    '<button class="btn" id="go">시작</button></div>';
+  var f = firstStats(pool);
+  html += '<div class="card"><div class="muted">실력 (처음 본 문항의 첫 답)</div><div class="big">'+pct(f.ok,f.n)+'</div><div class="muted">'+f.n+'문항 풀이 · 합격선 60%</div></div>';
+  $app.innerHTML = html;
+  $app.querySelectorAll("[data-subj]").forEach(function(b){ b.onclick=function(){ pick.subj=b.dataset.subj; vHome(); }; });
+  $app.querySelectorAll("[data-mode]").forEach(function(b){ b.onclick=function(){ pick.mode=b.dataset.mode; vHome(); }; });
+  $app.querySelectorAll("[data-n]").forEach(function(b){ b.onclick=function(){ pick.n=+b.dataset.n; vHome(); }; });
+  document.getElementById("tm").onchange=function(e){ pick.timer=e.target.checked; };
+  document.getElementById("go").onclick=startQuiz;
+}
+function firstStats(pool){ var n=0,ok=0; pool.forEach(function(q){ var f=S.first[q.id]; if(f){ n++; if(f.ok) ok++; } }); return {n:n,ok:ok}; }
+
+/* ---------- 풀이 ---------- */
+var Q = null; // {list, i, results:[], t0, tick}
+function startQuiz(){
+  var pool = subjOf(pick.subj), list;
+  if(pick.mode==="new") list = shuffle(pool.filter(function(q){ return !S.first[q.id]; }));
+  else if(pick.mode==="wrong") list = shuffle(pool.filter(function(q){ var w=S.wrong[q.id]; return w && w.st!=="안정"; }));
+  else list = shuffle(pool);
+  list = list.slice(0, pick.n);
+  if(!list.length){ toast(pick.mode==="new" ? "처음 보는 문항을 다 풀었어요. 「전체 섞기」를 고르세요" : "해당 문항이 없어요"); return; }
+  Q = {list:list.map(prep), i:0, results:[]};
+  document.getElementById("tabs").classList.add("hide");
+  document.getElementById("quit").classList.remove("hide");
+  showQ();
+}
+/* 선지 섞기: combo(보기 조합)는 순서가 의미라 고정 */
+function prep(q){
+  var idx=[0,1,2,3,4]; if(q.t!=="combo") idx=shuffle(idx);
+  return {q:q, order:idx, ans:idx.indexOf(q.a)};
+}
+function showQ(){
+  var it = Q.list[Q.i], q = it.q;
+  document.getElementById("ttl").textContent = q.subject + " " + (Q.i+1) + "/" + Q.list.length;
+  var html = '<div class="card"><div class="q-meta"><span>'+h(q.unit)+'</span><span class="timer" id="tmr"></span></div>';
+  if(q.scene) html += '<div class="scene">'+h(q.scene)+'</div>';
+  html += '<div class="ask">'+h(q.ask)+'</div>';
+  if(q.items && q.items.length) html += '<div class="items">'+q.items.map(function(s){ return '<div>'+h(s)+'</div>'; }).join("")+'</div>';
+  html += it.order.map(function(k,j){ return '<button class="opt" data-j="'+j+'"><span class="n">'+(j+1)+'</span><span>'+h(q.ch[k])+'</span></button>'; }).join("");
+  html += '<div id="after"></div></div>';
+  $app.innerHTML = html; window.scrollTo(0,0);
+  Q.t0 = Date.now(); clearInterval(Q.tick);
+  var tmr = document.getElementById("tmr");
+  if(pick.timer){ Q.tick = setInterval(function(){ var s=Math.floor((Date.now()-Q.t0)/1000); tmr.textContent = Math.floor(s/60)+":"+("0"+s%60).slice(-2); tmr.classList.toggle("over", s>SEC_PER_Q); }, 500); }
+  $app.querySelectorAll(".opt").forEach(function(b){ b.onclick=function(){ answer(+b.dataset.j); }; });
+}
+function answer(j){
+  var it = Q.list[Q.i], q = it.q; if(it.done) return; it.done = true;
+  clearInterval(Q.tick);
+  var sec = Math.round((Date.now()-Q.t0)/1000), ok = j===it.ans;
+  var first = record(q, ok, sec);
+  Q.results.push({id:q.id, ok:ok, first:first, sec:sec});
+  var opts = $app.querySelectorAll(".opt");
+  opts.forEach(function(b,k){ b.disabled=true; if(k===it.ans) b.classList.add("ok"); else if(k===j) b.classList.add("ng"); });
+  var pages = (q.page||[]).map(function(p){ return "p."+p; }).join(", ");
+  document.getElementById("after").innerHTML =
+    '<div style="margin:6px 0 8px" class="'+(ok?'res-ok':'res-ng')+'">'+(ok?'정답입니다':'오답 — 정답은 '+CIRC[it.ans])+(first?'':' <span class="tag">복습</span>')+'</div>'+
+    '<div class="ex">'+h(q.ex)+'</div>'+
+    '<div class="muted" style="margin-top:8px">근거: '+h(q.src)+' '+h(pages)+(q.rv?'':' <span class="tag">검토 전</span>')+'</div>'+
+    '<button class="flagbtn" id="flag">이상 있음 신고</button><div id="flagbox"></div>'+
+    '<button class="btn" id="next">'+(Q.i+1<Q.list.length?'다음 문항':'결과 보기')+'</button>';
+  document.getElementById("flag").onclick=function(){ flagBox(q); };
+  document.getElementById("next").onclick=function(){ Q.i++; if(Q.i<Q.list.length) showQ(); else showResult(); };
+}
+function flagBox(q){
+  var box=document.getElementById("flagbox"), old=(S.flags[q.id]||{}).note||"";
+  box.innerHTML='<textarea id="fnote" placeholder="무엇이 이상한지 적어 주세요 (예: 정답이 교재와 달라요)">'+h(old)+'</textarea><button class="btn sub" id="fsave">신고 저장</button>';
+  document.getElementById("fsave").onclick=function(){ var n=document.getElementById("fnote").value.trim(); S.flags[q.id]={note:n||"(메모 없음)", ts:Date.now(), ver:q.ver}; save(); box.innerHTML='<div class="muted">저장했어요. 「설정 → 신고 보내기」로 전달됩니다.</div>'; };
+}
+function showResult(){
+  var r=Q.results, ok=r.filter(function(x){return x.ok;}).length, fr=r.filter(function(x){return x.first;}), fok=fr.filter(function(x){return x.ok;}).length;
+  var avg = r.length ? Math.round(r.reduce(function(s,x){return s+x.sec;},0)/r.length) : 0;
+  document.getElementById("ttl").textContent="결과";
+  $app.innerHTML='<div class="card"><div class="big">'+ok+' / '+r.length+'</div>'+
+    '<div class="muted">처음 본 문항 '+fr.length+'개 중 '+fok+'개 정답 (실력) · 다시 푼 문항 '+(r.length-fr.length)+'개 (복습)</div>'+
+    '<div class="muted">문항당 평균 '+avg+'초</div></div>'+
+    '<div class="card">'+r.map(function(x,i){ var q=BY_ID[x.id]; return '<div style="padding:6px 0;border-bottom:1px solid var(--line)">'+(x.ok?'<span class="res-ok">○</span>':'<span class="res-ng">✕</span>')+' '+(i+1)+'. '+h(q.ask.slice(0,40))+'…</div>'; }).join("")+'</div>'+
+    '<button class="btn" id="home">처음으로</button>';
+  document.getElementById("home").onclick=endQuiz;
+}
+function endQuiz(){ clearInterval(Q&&Q.tick); Q=null; document.getElementById("tabs").classList.remove("hide"); document.getElementById("quit").classList.add("hide"); go("home"); }
+document.getElementById("quit").onclick=function(){ if(Q && Q.results.length) showResult(); else endQuiz(); };
+
+/* ---------- 오답노트 ---------- */
+function vWrong(){
+  var ids=Object.keys(S.wrong).filter(function(id){return BY_ID[id];}).sort(function(a,b){ return S.wrong[b].ts-S.wrong[a].ts; });
+  if(!ids.length){ $app.innerHTML='<div class="card muted">틀린 문항이 아직 없어요.</div>'; return; }
+  var order={"틀리는 중":0,"학습 중":1,"안정":2};
+  ids.sort(function(a,b){ return order[S.wrong[a].st]-order[S.wrong[b].st]; });
+  $app.innerHTML='<div class="card muted">틀리는 중 → 학습 중(맞힘 1~2회) → 안정(연속 3회). 「문제풀기 → 틀린 문항」으로 다시 풀어요.</div>'+
+    ids.map(function(id){ var q=BY_ID[id], w=S.wrong[id]; return '<div class="card"><div class="q-meta"><span>'+h(w.st)+' · 틀린 횟수 '+w.miss+'</span><span>'+h(q.subject)+'</span></div><div class="ask">'+h(q.ask)+'</div><div class="muted">정답: '+h(q.ch[q.a])+'</div><details><summary class="muted">해설</summary><div class="ex">'+h(q.ex)+'</div><div class="muted">근거: '+h(q.src)+' '+(q.page||[]).map(function(p){return "p."+p;}).join(", ")+'</div></details></div>'; }).join("");
+}
+
+/* ---------- 기록 ---------- */
+function vStats(){
+  var rows = SUBJECTS.map(function(s){ var pool=subjOf(s); if(!pool.length) return ""; var f=firstStats(pool);
+    var rv=S.log.filter(function(x){ return !x.f && BY_ID[x.id] && BY_ID[x.id].subject===s; }), rok=rv.filter(function(x){return x.ok;}).length;
+    return '<tr><td>'+h(s)+'<div class="muted">'+f.n+'/'+pool.length+'문항 풀이</div><div class="bar"><i style="width:'+(pool.length?f.n*100/pool.length:0)+'%"></i></div></td><td><b>'+pct(f.ok,f.n)+'</b><div class="muted">복습 '+pct(rok,rv.length)+'</div></td></tr>'; }).join("");
+  var all=firstStats(BANK);
+  $app.innerHTML='<div class="card"><div class="muted">실력 = 처음 본 문항의 첫 답 정답률</div><div class="big">'+pct(all.ok,all.n)+'</div><div class="muted">과목 40% · 전체 60% 이상이면 합격선</div></div>'+
+    '<div class="card"><table class="st">'+rows+'</table><div class="muted" style="margin-top:8px">복습 정답률은 외운 효과가 섞여 실력과 따로 봐요.</div></div>';
+}
+
+/* ---------- 설정: 백업·신고 ---------- */
+function vMore(){
+  var nf=Object.keys(S.flags).length;
+  $app.innerHTML='<div class="card"><b>신고 보내기</b><div class="muted">「이상 있음」으로 남긴 문항 '+nf+'개. 눌러서 카톡 등으로 보내 주세요.</div><button class="btn" id="fsend"'+(nf?'':' disabled')+'>신고 보내기</button></div>'+
+    '<div class="card"><b>기록 백업</b><div class="muted">풀이 기록은 이 휴대폰 안에만 있어요. 기기를 바꾸거나 브라우저 데이터를 지우기 전에 백업하세요.</div>'+
+    '<button class="btn sub" id="exp">기록 파일로 저장</button><button class="btn sub" id="imp">기록 파일 불러오기</button><input type="file" id="impf" accept=".json,application/json" class="hide"></div>'+
+    '<div class="card muted">문항 '+BANK.length+'개 · 앱 '+APP_VER+'<br>문항은 교재를 바탕으로 직접 만든 연습용이에요. 숫자는 교재 쪽수로 확인하세요.</div>';
+  document.getElementById("fsend").onclick=function(){
+    var txt="[문제풀이 신고]\n"+Object.keys(S.flags).map(function(id){ var f=S.flags[id], q=BY_ID[id]; return id+" (판"+f.ver+") "+(q?q.ask.slice(0,30):"")+"\n→ "+f.note; }).join("\n\n");
+    if(navigator.share) navigator.share({text:txt}).catch(function(){}); else copy(txt);
+  };
+  document.getElementById("exp").onclick=function(){
+    var blob=new Blob([JSON.stringify({app:"nurse-quiz",v:1,at:new Date().toISOString(),data:S})],{type:"application/json"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="문제풀이_기록_"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  };
+  document.getElementById("imp").onclick=function(){ document.getElementById("impf").click(); };
+  document.getElementById("impf").onchange=function(e){ var f=e.target.files[0]; if(!f) return; f.text().then(function(t){ try{ var o=JSON.parse(t); if(o.app!=="nurse-quiz") throw 0; S=merge(S,o.data); save(); toast("불러왔어요 (기존 기록과 합침)"); vMore(); }catch(x){ toast("이 앱의 기록 파일이 아니에요"); } }); };
+}
+function copy(t){ if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ toast("복사했어요. 카톡에 붙여 넣으세요"); }); }
+/* 합치기: 덮어쓰지 않는다. first는 먼저 푼 것, 나머지는 최신 시각 우선, 틀린 횟수는 큰 값 */
+function merge(a,b){
+  var o=blank(); b=b||{};
+  ["first"].forEach(function(k){ o[k]=Object.assign({},b[k]||{},a[k]||{}); for(var id in (b[k]||{})){ if(a[k]&&a[k][id]&&b[k][id].ts<a[k][id].ts) o[k][id]=b[k][id]; } });
+  ["last","flags"].forEach(function(k){ o[k]=Object.assign({},a[k]||{}); for(var id in (b[k]||{})){ if(!o[k][id]||b[k][id].ts>o[k][id].ts) o[k][id]=b[k][id]; } });
+  o.wrong=Object.assign({},a.wrong||{}); for(var id in (b.wrong||{})){ var x=o.wrong[id], y=b.wrong[id]; if(!x) o.wrong[id]=y; else { var m=Math.max(x.miss,y.miss); o.wrong[id]=Object.assign({}, y.ts>x.ts?y:x, {miss:m}); } }
+  var seen={}; o.log=(a.log||[]).concat(b.log||[]).filter(function(x){ var k=x.id+x.ts; if(seen[k]) return false; seen[k]=1; return true; }).sort(function(x,y){return x.ts-y.ts;});
+  return o;
+}
+
+/* ---------- 탭 ---------- */
+var VIEWS={home:vHome, wrong:vWrong, stats:vStats, more:vMore};
+var TITLES={home:"간호조무사 문제풀이", wrong:"오답노트", stats:"기록", more:"설정"};
+function go(v){ document.querySelectorAll("#tabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.v===v); }); document.getElementById("ttl").textContent=TITLES[v]; VIEWS[v](); window.scrollTo(0,0); }
+document.querySelectorAll("#tabs button").forEach(function(b){ b.onclick=function(){ go(b.dataset.v); }; });
+go("home");
+if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js");
+window.__nq = {BANK:BANK, S:function(){return S;}, merge:merge, prep:prep, answer:answer, startQuiz:startQuiz, pick:pick};
+</script>
+</body>
+</html>
