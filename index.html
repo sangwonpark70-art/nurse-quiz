@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="문제풀이">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--bg:#f6f7f5;--card:#fff;--ink:#1f2a2a;--sub:#5d6b6a;--line:#dfe5e3;--main:#2f6f6a;--ok:#1e8a4c;--ng:#c2372f;--warn:#b7791f;--sel:#e8f2f1}
 *{box-sizing:border-box}
@@ -47,6 +48,8 @@ nav.tabs{position:sticky;bottom:0;display:flex;background:#fff;border-top:1px so
 nav.tabs button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:14px;color:var(--sub);font-family:inherit}
 nav.tabs button.on{color:var(--main);font-weight:700}
 .hide{display:none!important}
+.sync{font-size:13px;color:var(--sub);margin-top:8px}.sync button{background:none;border:0;color:var(--main);text-decoration:underline;font-size:13px;padding:0;font-family:inherit}
+.sync.err{color:var(--ng)}
 </style>
 </head>
 <body>
@@ -62,7 +65,7 @@ nav.tabs button.on{color:var(--main);font-weight:700}
 <script src="bank/maternal.js"></script>
 <script>
 "use strict";
-var APP_VER = "1.0.1";
+var APP_VER = "1.1.0";
 var SUBJECTS = ["해부생리","기초약리","기초영양","기본간호","모성간호","지역사회"];
 var BANK = (window.QBANK || []).slice();
 var BY_ID = {}; BANK.forEach(function(q){ BY_ID[q.id] = q; });
@@ -77,7 +80,7 @@ function load(){
   catch(e){ return blank(); }
 }
 var S = load();
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("저장 실패: 저장 공간을 확인하세요"); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("저장 실패: 저장 공간을 확인하세요"); } if(typeof gdSoon==="function") gdSoon(); }
 
 /* 답 하나를 기록. first = 처음 본 문항의 첫 답(실력 지표), 이후는 복습 */
 function record(q, ok, sec){
@@ -117,7 +120,7 @@ function vHome(){
     '<div class="muted" style="margin-top:12px">문항 수</div><div class="row" style="margin-top:6px">' +
     [10,20,30].map(function(n){ return '<button class="chip'+(pick.n===n?' on':'')+'" data-n="'+n+'">'+n+'</button>'; }).join("") + '</div>' +
     '<label class="row" style="margin-top:12px;align-items:center"><input type="checkbox" id="tm"'+(pick.timer?' checked':'')+'> <span>시간 재기 (국시처럼 1문항 1분)</span></label>' +
-    '<button class="btn" id="go">시작</button></div>';
+    '<button class="btn" id="go">시작</button><div class="sync" id="gdstat"></div></div>';
   var f = firstStats(pool);
   html += '<div class="card"><div class="muted">실력 (처음 본 문항의 첫 답)</div><div class="big">'+pct(f.ok,f.n)+'</div><div class="muted">'+f.n+'문항 풀이 · 합격선 60%</div></div>';
   $app.innerHTML = html;
@@ -126,6 +129,7 @@ function vHome(){
   $app.querySelectorAll("[data-n]").forEach(function(b){ b.onclick=function(){ pick.n=+b.dataset.n; vHome(); }; });
   document.getElementById("tm").onchange=function(e){ pick.timer=e.target.checked; };
   document.getElementById("go").onclick=startQuiz;
+  gdUI();
 }
 function firstStats(pool){ var n=0,ok=0; pool.forEach(function(q){ var f=S.first[q.id]; if(f){ n++; if(f.ok) ok++; } }); return {n:n,ok:ok}; }
 
@@ -223,10 +227,15 @@ function vStats(){
 /* ---------- 설정: 백업·신고 ---------- */
 function vMore(){
   var nf=Object.keys(S.flags).length;
-  $app.innerHTML='<div class="card"><b>신고 보내기</b><div class="muted">「이상 있음」으로 남긴 문항 '+nf+'개. 눌러서 카톡 등으로 보내 주세요.</div><button class="btn" id="fsend"'+(nf?'':' disabled')+'>신고 보내기</button></div>'+
+  $app.innerHTML='<div class="card"><b>구글 드라이브 연동</b><div class="muted">로그인하면 내 구글 드라이브 「간호조무사_문제풀이」 폴더에 기록이 저장되고, 폰·아이패드 기록이 하나로 합쳐져요.</div><div class="sync" id="gdstat"></div>'+
+    '<button class="btn" id="gdgo">'+(gdValid()?'지금 맞추기':'구글 로그인')+'</button>'+(gd.linked?'<button class="btn sub" id="gdoff">이 기기 연결 해제</button>':'')+'</div>'+
+    '<div class="card"><b>신고 보내기</b><div class="muted">「이상 있음」으로 남긴 문항 '+nf+'개. 눌러서 카톡 등으로 보내 주세요.</div><button class="btn" id="fsend"'+(nf?'':' disabled')+'>신고 보내기</button></div>'+
     '<div class="card"><b>기록 백업</b><div class="muted">풀이 기록은 이 휴대폰 안에만 있어요. 기기를 바꾸거나 브라우저 데이터를 지우기 전에 백업하세요.</div>'+
     '<button class="btn sub" id="exp">기록 파일로 저장</button><button class="btn sub" id="imp">기록 파일 불러오기</button><input type="file" id="impf" accept=".json,application/json" class="hide"></div>'+
     '<div class="card muted">문항 '+BANK.length+'개 · 앱 '+APP_VER+'<br>문항은 교재를 바탕으로 직접 만든 연습용이에요. 숫자는 교재 쪽수로 확인하세요.</div>';
+  gdUI();
+  document.getElementById("gdgo").onclick=function(){ if(gdValid()) gdSync(); else gdLogin(); };
+  if(gd.linked) document.getElementById("gdoff").onclick=gdOff;
   document.getElementById("fsend").onclick=function(){
     var txt="[문제풀이 신고]\n"+Object.keys(S.flags).map(function(id){ var f=S.flags[id], q=BY_ID[id]; return id+" (판"+f.ver+") "+(q?q.ask.slice(0,30):"")+"\n→ "+f.note; }).join("\n\n");
     if(navigator.share) navigator.share({text:txt}).catch(function(){}); else copy(txt);
@@ -245,18 +254,121 @@ function merge(a,b){
   ["first"].forEach(function(k){ o[k]=Object.assign({},b[k]||{},a[k]||{}); for(var id in (b[k]||{})){ if(a[k]&&a[k][id]&&b[k][id].ts<a[k][id].ts) o[k][id]=b[k][id]; } });
   ["last","flags"].forEach(function(k){ o[k]=Object.assign({},a[k]||{}); for(var id in (b[k]||{})){ if(!o[k][id]||b[k][id].ts>o[k][id].ts) o[k][id]=b[k][id]; } });
   o.wrong=Object.assign({},a.wrong||{}); for(var id in (b.wrong||{})){ var x=o.wrong[id], y=b.wrong[id]; if(!x) o.wrong[id]=y; else { var m=Math.max(x.miss,y.miss); o.wrong[id]=Object.assign({}, y.ts>x.ts?y:x, {miss:m}); } }
-  var seen={}; o.log=(a.log||[]).concat(b.log||[]).filter(function(x){ var k=x.id+x.ts; if(seen[k]) return false; seen[k]=1; return true; }).sort(function(x,y){return x.ts-y.ts;});
+  var seen={}; o.log=(a.log||[]).concat(b.log||[]).filter(function(x){ var k=x.id+x.ts; if(seen[k]) return false; seen[k]=1; return true; }).sort(function(x,y){return x.ts-y.ts;}).slice(-5000);
+  // 모르는 항목도 버리지 않는다(구버전 기기가 새 항목을 지우지 않게)
+  for(var k1 in a){ if(!(k1 in o)) o[k1]=a[k1]; } for(var k2 in b){ if(!(k2 in o)) o[k2]=b[k2]; }
   return o;
 }
+
+
+/* ---------- 구글 드라이브 연동 ----------
+   기기 저장이 1차(오프라인·비로그인 대비), 드라이브는 여러 기기를 합치는 곳.
+   쓰기 직전에 드라이브를 다시 읽어 합친 뒤 쓴다(덮어쓰기 금지). 권한 drive.file = 이 앱이 만든 파일만. */
+var GD = {CLIENT_ID:"210556364030-5nvamp2m1fmehl1m38i1a02b523gc464.apps.googleusercontent.com",
+  SCOPE:"https://www.googleapis.com/auth/drive.file", FOLDER:"간호조무사_문제풀이", FILE:"문제풀이_기록.json",
+  BAK:"문제풀이_기록_백업_", KEEP:7, TK:"nq_gd_token", META:"nq_gd_meta"};
+var API="https://www.googleapis.com/drive/v3/files", UP="https://www.googleapis.com/upload/drive/v3/files";
+var gd = {token:null, exp:0, tc:null, folderId:null, fileId:null, busy:false, again:false, timer:null, last:0, linked:false, err:""};
+(function(){ try{ var t=JSON.parse(localStorage.getItem(GD.TK)||"null"); if(t&&t.exp>Date.now()){ gd.token=t.token; gd.exp=t.exp; }
+  var m=JSON.parse(localStorage.getItem(GD.META)||"null"); if(m){ gd.last=m.last||0; gd.linked=!!m.linked; } }catch(e){} })();
+function gdValid(){ return !!gd.token && gd.exp > Date.now(); }
+function gdMeta(){ try{ localStorage.setItem(GD.META, JSON.stringify({last:gd.last, linked:gd.linked})); }catch(e){} }
+function gdUI(){
+  var t, err=false, btn="";
+  if(gd.busy) t="드라이브와 맞추는 중…";
+  else if(gd.err){ t=gd.err; err=true; btn=' <button data-gd="1">다시 연결</button>'; }
+  else if(gdValid()) t="드라이브 연동됨 · 마지막 저장 "+(gd.last?new Date(gd.last).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}):"–");
+  else if(gd.linked){ t="드라이브 연결이 끊겼어요."; btn=' <button data-gd="1">다시 연결</button>'; }
+  else t="이 기기에만 저장 중 · 「설정 → 구글 로그인」하면 폰·아이패드 기록이 합쳐져요";
+  document.querySelectorAll("#gdstat").forEach(function(el){ el.className="sync"+(err?" err":""); el.innerHTML=h(t)+btn;
+    var b=el.querySelector("[data-gd]"); if(b) b.onclick=gdLogin; });
+}
+async function gdFetch(url, opt){
+  opt=opt||{}; opt.headers=Object.assign({Authorization:"Bearer "+gd.token}, opt.headers||{});
+  var r=await fetch(url,opt);
+  if(r.status===401){ gd.token=null; try{ localStorage.removeItem(GD.TK); }catch(e){} throw new Error("auth"); }
+  if(!r.ok) throw new Error("drive "+r.status);
+  return r;
+}
+async function gdFind(q){ var r=await gdFetch(API+"?q="+encodeURIComponent(q+" and trashed=false")+"&spaces=drive&orderBy=createdTime&fields=files(id,name)"); return (await r.json()).files||[]; }
+async function gdCreate(name, parent, mime, body){
+  var meta={name:name, mimeType:mime}; if(parent) meta.parents=[parent];
+  if(body===undefined){ var r=await gdFetch(API+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(meta)}); return (await r.json()).id; }
+  var b="nq"+Date.now(), pl="--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+body+"\r\n--"+b+"--";
+  var r2=await gdFetch(UP+"?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},body:pl}); return (await r2.json()).id;
+}
+async function gdEnsure(){
+  if(!gd.folderId){ var f=await gdFind("name='"+GD.FOLDER+"' and mimeType='application/vnd.google-apps.folder'"); gd.folderId=f.length?f[0].id:await gdCreate(GD.FOLDER,null,"application/vnd.google-apps.folder"); }
+  if(!gd.fileId){ var g=await gdFind("name='"+GD.FILE+"' and '"+gd.folderId+"' in parents"); gd.fileId=g.length?g[0].id:null; }
+}
+function gdBody(){ return JSON.stringify({app:"nurse-quiz", v:1, at:new Date().toISOString(), data:S}); }
+async function gdRead(){
+  if(!gd.fileId) return null;
+  var t=await (await gdFetch(API+"/"+gd.fileId+"?alt=media")).text();
+  try{ var o=JSON.parse(t); return (o&&o.app==="nurse-quiz")?o.data:null; }catch(e){ return null; }
+}
+async function gdWrite(){
+  var body=gdBody();
+  if(!gd.fileId) gd.fileId=await gdCreate(GD.FILE, gd.folderId, "application/json", body);
+  else await gdFetch(UP+"/"+gd.fileId+"?uploadType=media",{method:"PATCH",headers:{"Content-Type":"application/json"},body:body});
+}
+/* 하루 1번 날짜 붙은 백업, 최근 7개만 남김(같은 이름 사본은 만들지 않음) */
+async function gdBackup(){
+  var day=new Date(Date.now()+9*3600e3).toISOString().slice(0,10).replace(/-/g,"");
+  if(localStorage.getItem("nq_gd_bak")===day) return;
+  var name=GD.BAK+day+".json";
+  if(!(await gdFind("name='"+name+"' and '"+gd.folderId+"' in parents")).length) await gdCreate(name, gd.folderId, "application/json", gdBody());
+  var all=await gdFind("name contains '"+GD.BAK+"' and '"+gd.folderId+"' in parents");
+  all.sort(function(x,y){ return x.name<y.name?1:-1; });
+  for(var i=GD.KEEP;i<all.length;i++) await gdFetch(API+"/"+all[i].id,{method:"DELETE"});
+  try{ localStorage.setItem("nq_gd_bak", day); }catch(e){}
+}
+async function gdSync(){
+  clearTimeout(gd.timer); gd.timer=null;
+  if(!gdValid()){ gdUI(); return; }
+  if(gd.busy){ gd.again=true; return; }
+  gd.busy=true; gdUI();
+  try{
+    await gdEnsure();
+    var remote=await gdRead();
+    if(remote){ S=merge(S, remote); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+    await gdWrite();
+    gd.last=Date.now(); gd.linked=true; gd.err=""; gdMeta();
+    gdBackup().catch(function(){});
+  }catch(e){ gd.err = e.message==="auth" ? "로그인이 만료됐어요." : "드라이브 저장 실패(인터넷 확인). 기기에는 저장돼 있어요."; }
+  gd.busy=false; gdUI();
+  if(!Q && VIEWS[CUR] && CUR!=="more") VIEWS[CUR]();
+  if(gd.again){ gd.again=false; gdSync(); }
+}
+function gdSoon(){ if(!gdValid()) return; clearTimeout(gd.timer); gd.timer=setTimeout(gdSync, 1500); }
+function gdLogin(){
+  if(!(window.google&&google.accounts&&google.accounts.oauth2)){ toast("구글 로그인 준비 중이에요. 잠시 후 다시 눌러 주세요"); return; }
+  if(!gd.tc) gd.tc=google.accounts.oauth2.initTokenClient({client_id:GD.CLIENT_ID, scope:GD.SCOPE, callback:function(r){
+    if(r.error){ toast("로그인이 취소됐어요"); return; }
+    gd.token=r.access_token; gd.exp=Date.now()+((r.expires_in||3500)*1000)-60000; gd.err="";
+    try{ localStorage.setItem(GD.TK, JSON.stringify({token:gd.token, exp:gd.exp})); }catch(e){}
+    gdSync().then(function(){ if(CUR==="more") vMore(); });
+  }});
+  gd.tc.requestAccessToken({prompt: gd.linked ? "" : "consent"});
+}
+function gdOff(){
+  try{ if(gd.token && window.google) google.accounts.oauth2.revoke(gd.token, function(){}); }catch(e){}
+  gd.token=null; gd.linked=false; gd.err=""; gd.folderId=null; gd.fileId=null;
+  try{ localStorage.removeItem(GD.TK); localStorage.removeItem(GD.META); }catch(e){}
+  toast("이 기기의 연결을 해제했어요(기록은 그대로)"); vMore();
+}
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden" && gd.timer) gdSync(); });
 
 /* ---------- 탭 ---------- */
 var VIEWS={home:vHome, wrong:vWrong, stats:vStats, more:vMore};
 var TITLES={home:"간호조무사 문제풀이", wrong:"오답노트", stats:"기록", more:"설정"};
-function go(v){ document.querySelectorAll("#tabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.v===v); }); document.getElementById("ttl").textContent=TITLES[v]; VIEWS[v](); window.scrollTo(0,0); }
+var CUR="home";
+function go(v){ CUR=v; document.querySelectorAll("#tabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.v===v); }); document.getElementById("ttl").textContent=TITLES[v]; VIEWS[v](); window.scrollTo(0,0); }
 document.querySelectorAll("#tabs button").forEach(function(b){ b.onclick=function(){ go(b.dataset.v); }; });
 go("home");
+if(gdValid()) gdSync();
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js");
-window.__nq = {BANK:BANK, S:function(){return S;}, merge:merge, prep:prep, answer:answer, startQuiz:startQuiz, pick:pick};
+window.__nq = {BANK:BANK, S:function(){return S;}, merge:merge, prep:prep, answer:answer, startQuiz:startQuiz, pick:pick, gd:gd, gdSync:gdSync, GD:GD};
 </script>
 </body>
 </html>
