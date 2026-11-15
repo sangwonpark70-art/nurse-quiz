@@ -62,10 +62,11 @@ nav.tabs button.on{color:var(--main);font-weight:700}
   <button data-v="more">설정</button>
 </nav>
 <!-- 문항은행: 과목별 파일. 새 과목은 여기 한 줄 추가 -->
+<script src="bank/anatomy.js"></script>
 <script src="bank/maternal.js"></script>
 <script>
 "use strict";
-var APP_VER = "1.1.1";
+var APP_VER = "1.2.0";
 var SUBJECTS = ["해부생리","기초약리","기초영양","기본간호","모성간호","지역사회"];
 var BANK = (window.QBANK || []).slice();
 var BY_ID = {}; BANK.forEach(function(q){ BY_ID[q.id] = q; });
@@ -106,7 +107,7 @@ function subjOf(s){ return BANK.filter(function(q){ return s==="전체" || q.sub
 var CIRC = ["①","②","③","④","⑤"];
 
 /* ---------- 화면: 홈 ---------- */
-var pick = {subj:"전체", mode:"new", n:10, timer:true};
+var pick = {subj:"전체", mode:"new", n:5, timer:true};
 function vHome(){
   var subs = ["전체"].concat(SUBJECTS.filter(function(s){ return BANK.some(function(q){return q.subject===s;}); }));
   var pool = subjOf(pick.subj);
@@ -118,7 +119,7 @@ function vHome(){
     [["new","처음 보는 문항 ("+nNew+")"],["wrong","틀린 문항 ("+nWrong+")"],["all","전체 섞기 ("+pool.length+")"]].map(function(m){
       return '<button class="chip'+(pick.mode===m[0]?' on':'')+'" data-mode="'+m[0]+'">'+m[1]+'</button>'; }).join("") + '</div>' +
     '<div class="muted" style="margin-top:12px">문항 수</div><div class="row" style="margin-top:6px">' +
-    [10,20,30].map(function(n){ return '<button class="chip'+(pick.n===n?' on':'')+'" data-n="'+n+'">'+n+'</button>'; }).join("") + '</div>' +
+    [5,10,20,30].map(function(n){ return '<button class="chip'+(pick.n===n?' on':'')+'" data-n="'+n+'">'+n+'</button>'; }).join("") + '</div>' +
     '<label class="row" style="margin-top:12px;align-items:center"><input type="checkbox" id="tm"'+(pick.timer?' checked':'')+'> <span>시간 재기 (국시처럼 1문항 1분)</span></label>' +
     '<button class="btn" id="go">시작</button><div class="sync" id="gdstat"></div></div>';
   var f = firstStats(pool);
