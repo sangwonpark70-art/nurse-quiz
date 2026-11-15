@@ -232,7 +232,7 @@ function vMore(){
     '<div class="card"><b>신고 보내기</b><div class="muted">「이상 있음」으로 남긴 문항 '+nf+'개. 눌러서 카톡 등으로 보내 주세요.</div><button class="btn" id="fsend"'+(nf?'':' disabled')+'>신고 보내기</button></div>'+
     '<div class="card"><b>기록 백업</b><div class="muted">구글 로그인을 하면 드라이브에 자동 저장·백업돼요. 로그인하지 않았다면 기록은 이 기기 안에만 있으니, 기기를 바꾸기 전에 파일로 저장해 두세요.</div>'+
     '<button class="btn sub" id="exp">기록 파일로 저장</button><button class="btn sub" id="imp">기록 파일 불러오기</button><input type="file" id="impf" accept=".json,application/json" class="hide"></div>'+
-    '<div class="card muted">문항 '+BANK.length+'개 · 앱 '+APP_VER+'<br>문항은 교재를 바탕으로 직접 만든 연습용이에요. 숫자는 교재 쪽수로 확인하세요.</div>';
+    '<div class="card muted">문항 '+BANK.length+'개 · 앱 '+APP_VER+' · <a href="privacy.html">개인정보처리방침</a><br>문항은 교재를 바탕으로 직접 만든 연습용이에요. 숫자는 교재 쪽수로 확인하세요.</div>';
   gdUI();
   document.getElementById("gdgo").onclick=function(){ if(gdValid()) gdSync(); else gdLogin(); };
   if(gd.linked) document.getElementById("gdoff").onclick=gdOff;
